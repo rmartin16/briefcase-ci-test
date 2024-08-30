@@ -4,28 +4,60 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
+
+# Cancel active CI runs for a PR before starting another run
+concurrency:
+  group: ${{ github.workflow}}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  FORCE_COLOR: "1"
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
   ci:
-    name: CI
+    name: Test and Package
     runs-on: ${{ matrix.runs-on }}
     strategy:
       fail-fast: false
       matrix:
-        platform: [ "Windows", "macOS", "Linux", "iOS", "Android", "Web" ]
+        platform: [ "Windows", "macOS", "Linux", "iOS", "Android", "Web"]
         include:
+
           - platform: "Windows"
             runs-on: "windows-latest"
+
           - platform: "macOS"
             runs-on: "macos-latest"
+
           - platform: "Linux"
             runs-on: "ubuntu-latest"
+            briefcase-run-prefix: "sudo apt -y install socat && xvfb-run"
             briefcase-args: "--target ubuntu:24.04"
+
           - platform: "iOS"
             runs-on: "macos-latest"
+            briefcase-run-args: "--device 'iPhone SE (3rd generation)'"
+
           - platform: "Android"
             runs-on: "ubuntu-latest"
+            briefcase-run-prefix: >-
+              # Enable KVM permissions for user and use GitHub's preinstalled JDK
+              echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+              && sudo udevadm control --reload-rules
+              && sudo udevadm trigger --name-match=kvm
+              && JAVA_HOME="${JAVA_HOME_17_X64}"
+            briefcase-run-args: >-
+              --device '{"avd":"beePhone"}'
+              --Xemulator=-no-window
+              --Xemulator=-no-snapshot
+              --Xemulator=-no-audio
+              --Xemulator=-no-boot-anim
+              --shutdown-on-exit
+
           - platform: "Web"
             runs-on: "ubuntu-latest"
 
@@ -44,15 +76,29 @@ jobs:
           python -m pip install briefcase
 
       - name: Build App
-        run: briefcase build ${{ matrix.platform }} ${{ matrix.briefcase-args }} --no-input
+        run: |
+          briefcase build ${{ matrix.platform }} \
+            --test --no-input \
+            ${{ matrix.briefcase-args }}
+
+      - name: Test App
+        run: |
+          ${{ matrix.briefcase-run-prefix }} \
+          briefcase run ${{ matrix.platform }} \
+            --test --no-input \
+            ${{ matrix.briefcase-run-args }} \
+            ${{ matrix.briefcase-args }}    
 
       - name: Package App
-        run: briefcase package ${{ matrix.platform }} ${{ matrix.briefcase-args }} --adhoc-sign --no-input
+        run: |
+          briefcase package ${{ matrix.platform }} \
+            --update --adhoc-sign --no-input \
+            ${{ matrix.briefcase-args }}
 
       - name: Upload App
         if: matrix.platform != 'iOS'
         uses: actions/upload-artifact@v4
         with:
           name: App-${{ matrix.platform }}
-          path: 'dist'
+          path: dist
           if-no-files-found: error

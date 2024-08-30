@@ -1,4 +1,4 @@
-# This project was generated with 0.3.20.dev130+gea446be6 using template: https://github.com/beeware/briefcase-template@main
+# This project was generated with 0.3.20.dev178+g2a2da7cc.d20240830 using template: https://github.com/beeware/briefcase-template@main
 [tool.briefcase]
 project_name = "Hello World"
 bundle = "com.example"
@@ -30,14 +30,13 @@ test_requires = [
 universal_build = true
 requires = [
     "toga-cocoa~=0.4.6",
-    "std-nslog~=1.0.0",
+    "std-nslog~=1.0.3",
 ]
 
 [tool.briefcase.app.helloworld.linux]
 requires = [
     "toga-gtk~=0.4.6",
 ]
-my_attribute = "zxcv"
 
 [tool.briefcase.app.helloworld.linux.system.debian]
 system_requires = [
@@ -158,7 +157,7 @@ requires = [
 [tool.briefcase.app.helloworld.iOS]
 requires = [
     "toga-iOS~=0.4.6",
-    "std-nslog~=1.0.0",
+    "std-nslog~=1.0.3",
 ]
 
 [tool.briefcase.app.helloworld.android]
@@ -181,5 +180,4 @@ build_gradle_dependencies = [
 requires = [
     "toga-web~=0.4.6",
 ]
-style_framework = "Shoelace v2.16"
-
+style_framework = "Shoelace v2.3"
