@@ -24,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [ "Windows", "macOS", "Linux", "iOS", "Android", "Web"]
+        platform: [ "Windows", "macOS", "Linux", "iOS", "Android"]
         include:
 
           - platform: "Windows"
@@ -57,9 +57,6 @@ jobs:
               --Xemulator=-no-audio
               --Xemulator=-no-boot-anim
               --shutdown-on-exit
-
-          - platform: "Web"
-            runs-on: "ubuntu-latest"
 
     steps:
       - name: Checkout
@@ -102,3 +99,10 @@ jobs:
           name: App-${{ matrix.platform }}
           path: dist
           if-no-files-found: error
+
+      - name: Upload Logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: log-${{ matrix.backend }}
+          path: logs/*
