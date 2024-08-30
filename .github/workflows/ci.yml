@@ -1,0 +1,51 @@
+name: Package App
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  package-windows:
+    name: Package App - Windows
+    runs-on: ${{ matrix.runs-on }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ "Windows", "macOS", "Linux", "iOS", "Android" ]
+        include:
+          - platform: "Windows"
+            runs-on: "windows-latest"
+          - platform: "macOS"
+            runs-on: "macos-latest"
+          - platform: "Linux"
+            runs-on: "ubuntu-latest"
+          - platform: "iOS"
+            runs-on: "macos-latest"
+          - platform: "Android"
+            runs-on: "ubuntu-latest"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: Install Briefcase
+        run: |
+          python -m pip install -U pip setuptools wheel
+          python -m pip install briefcase
+
+      - name: Build App
+        run: briefcase build $${ matrix.platform }} --no-input
+
+      - name: Package App
+        run: briefcase package $${ matrix.platform }} --adhoc-sign --no-input
+
+      - name: Upload App
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform }}-app
+          path: 'dist'
+          if-no-files-found: error
