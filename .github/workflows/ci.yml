@@ -1,16 +1,19 @@
-name: Package App
+name: CI
 on:
   pull_request:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
-  package-windows:
-    name: Package App - Windows
+  ci:
+    name: CI
     runs-on: ${{ matrix.runs-on }}
     strategy:
       fail-fast: false
       matrix:
-        platform: [ "Windows", "macOS", "Linux", "iOS", "Android" ]
+        platform: [ "Windows", "macOS", "Linux", "iOS", "Android", "Web" ]
         include:
           - platform: "Windows"
             runs-on: "windows-latest"
@@ -18,9 +21,12 @@ jobs:
             runs-on: "macos-latest"
           - platform: "Linux"
             runs-on: "ubuntu-latest"
+            briefcase-args: "--target ubuntu:24.04"
           - platform: "iOS"
             runs-on: "macos-latest"
           - platform: "Android"
+            runs-on: "ubuntu-latest"
+          - platform: "Web"
             runs-on: "ubuntu-latest"
 
     steps:
@@ -38,14 +44,15 @@ jobs:
           python -m pip install briefcase
 
       - name: Build App
-        run: briefcase build $${ matrix.platform }} --no-input
+        run: briefcase build ${{ matrix.platform }} ${{ matrix.briefcase-args }} --no-input
 
       - name: Package App
-        run: briefcase package $${ matrix.platform }} --adhoc-sign --no-input
+        run: briefcase package ${{ matrix.platform }} ${{ matrix.briefcase-args }} --adhoc-sign --no-input
 
       - name: Upload App
+        if: matrix.platform != 'iOS'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.platform }}-app
+          name: App-${{ matrix.platform }}
           path: 'dist'
           if-no-files-found: error
