@@ -21,7 +21,6 @@ test_sources = [
 ]
 
 requires = [
-    "no-a-real-package"
 ]
 test_requires = [
     "pytest",
